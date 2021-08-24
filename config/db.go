@@ -16,5 +16,9 @@ func InitDB() {
 	}
 	Db.AutoMigrate(&model.User{})
 	Db.AutoMigrate(&model.ProductWarehouse{})
+	Db.AutoMigrate(&model.ProductDisplay{})
+	Db.AutoMigrate(&model.Cart{})
+	Db.AutoMigrate(&model.Transaction{})
+	Db.AutoMigrate(&model.TransactionDetail{})
 }
 

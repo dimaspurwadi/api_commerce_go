@@ -187,3 +187,15 @@ func IsAuthenticated(token string) bool {
 
 	return true
 }
+
+func ClaimToken(c *gin.Context) uint {
+	authHeader := c.Request.Header.Get("Authorization")
+	auth := strings.Split(authHeader, " ")
+	token, _ := jwt.Parse(auth[1], func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
+	})
+	
+	claim, _ := token.Claims.(jwt.MapClaims)
+	userID := uint(claim["user_id"].(float64))
+	return userID
+}

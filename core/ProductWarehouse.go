@@ -23,7 +23,7 @@ func GetProductWarehouse(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Get Product",
-			"data" : ProductWarehouse,
+			"data" : ProductWarehouses,
 		})
 	}
 }
@@ -91,7 +91,7 @@ func UpdateProductWarehouse(c *gin.Context) {
 	err := config.Db.First(&productWarehouse, "sku = ?", json.Sku)
 	if err.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status" : "Bad Request",
+			"status" : "Not Found",
 			"messages" : fmt.Sprintf("%s", err.Error),
 		})
 		c.Abort()
@@ -116,4 +116,69 @@ func UpdateProductWarehouse(c *gin.Context) {
 		"messages" : "Success Update Data",
 		"data" : productWarehouse,
 	})
+}
+
+func RestockProductWarehouse(c *gin.Context) {
+	var json model.RestockProductWarehouseRequest
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status" : "Bad Request",
+			"messages" : fmt.Sprintf("%s", err.Error()),
+		})
+		c.Abort()
+		return
+	}
+	var productWarehouse model.ProductWarehouse
+	err := config.Db.First(&productWarehouse, "sku = ?", json.Sku)
+	if err.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status" : "Not Found",
+			"messages" : fmt.Sprintf("%s", err.Error),
+		})
+		c.Abort()
+		return
+	}
+	productWarehouse.Sku = json.Sku
+	productWarehouse.Qty = json.Qty
+
+	result := config.Db.Save(&productWarehouse)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status" : "Internal Server Error",
+			"messages" : fmt.Sprintf("%s", result.Error),
+		})
+		c.Abort()
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status" : "success",
+		"messages" : "Success Restock Data",
+		"data" : productWarehouse,
+	})
+}
+
+func DeleteProductWarehouse(c *gin.Context) {
+	err := config.Db.First(&ProductWarehouse,"sku = ?", c.Param("sku"))
+
+	if err.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H {
+			"status" : "Not Found",
+			"messages" : fmt.Sprintf("%s", err.Error),
+		})
+	} else {
+		err := config.Db.Delete(&ProductWarehouse)
+		if err.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status" : "Internal Server Error",
+				"messages" : fmt.Sprintf("%s", err.Error),
+			})
+			c.Abort()
+			return
+		}
+		c.JSON(http.StatusOK, gin.H {
+			"status" : "success",
+			"messages" : "Success Delete Product",
+			"data" : ProductWarehouse,
+		})
+	}
 }
