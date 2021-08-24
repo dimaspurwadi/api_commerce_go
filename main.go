@@ -25,5 +25,13 @@ func main() {
 		auth.POST("/logout", middleware.CheckJWTWithoutRole(), core.Logout)
 	}
 
+	productWarehouse := r.Group("/stock")
+	{
+		productWarehouse.GET("/", middleware.CheckJWT(1), core.GetProductWarehouse)
+		productWarehouse.GET("/:sku", middleware.CheckJWT(1), core.GetProductWarehouseBySku)
+		productWarehouse.POST("/insert", middleware.CheckJWT(1), core.InsertProductWarehouse)
+		productWarehouse.PUT("/update", middleware.CheckJWT(1), core.UpdateProductWarehouse)
+	}
+
 	r.Run(":" + os.Getenv("API_PORT"))
 }
