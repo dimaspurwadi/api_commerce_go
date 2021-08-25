@@ -177,7 +177,7 @@ func RestockProductDisplay(c *gin.Context) {
 		Sku : json.Sku,
 		Name : productWarehouse.Name,
 		Price : productWarehouse.Price,
-		Qty : productWarehouse.Qty,
+		Qty : json.Qty,
 	}
 
 	err = config.Db.Create(&productDisplay)

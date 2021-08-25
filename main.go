@@ -58,5 +58,10 @@ func main() {
 		transaction.GET("/", middleware.CheckJWT(0), core.GetTransactionHistory) 
 	}
 
+	report := r.Group("/report")
+	{
+		report.GET("/", middleware.CheckJWT(0), core.GetAllReport) 
+	}
+
 	r.Run(":" + os.Getenv("API_PORT"))
 }

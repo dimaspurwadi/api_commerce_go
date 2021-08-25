@@ -30,6 +30,8 @@ func GetTransactionHistory(c *gin.Context) {
 				"UpdatedAt":     transaction.UpdatedAt,
 				"DeletedAt":     transaction.DeletedAt,
 				"User_id":       transaction.UserID,
+				"SubTotal": 	 transaction.SubTotal,
+				"DiscountTotal": 	 transaction.DiscountTotal,
 				"GrandTotal": 	 transaction.GrandTotal,
 				"detail" : TransactionDetail, 
 			}

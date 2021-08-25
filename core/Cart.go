@@ -137,7 +137,7 @@ func CheckoutCart(c *gin.Context) {
 		})
 	}
 	/*check Qty available on display*/
-	var grandTotal float64
+	var subTotal float64
 	for _, cart := range Carts {
 		statusQty := validateCart(cart)
 		if !statusQty {
@@ -148,13 +148,17 @@ func CheckoutCart(c *gin.Context) {
 			c.Abort()
 			return
 		}
-		productWarehouse := getProductWarehouseBySku(cart.Sku)
-		grandTotal += productWarehouse.Price * float64(cart.Qty)
+		productDisplay := getProductDisplayBySku(cart.Sku)
+		subTotal += productDisplay.Price * float64(cart.Qty)
 	}
+
+	discountTotal := 0.00
 
 	transaction := model.Transaction{
 		UserID : int64(userID),
-		GrandTotal : grandTotal,
+		SubTotal: subTotal,
+		DiscountTotal : discountTotal,
+		GrandTotal : subTotal + discountTotal,
 	}
 	
 	err = config.Db.Create(&transaction)
@@ -168,13 +172,14 @@ func CheckoutCart(c *gin.Context) {
 	}
 
 	for _, cart := range Carts {
-		productWarehouse := getProductWarehouseBySku(cart.Sku)
-		subTotal := productWarehouse.Price * float64(cart.Qty)
+		productDisplay := getProductDisplayBySku(cart.Sku)
+		Total := productDisplay.Price * float64(cart.Qty)
 		transactionDetail := model.TransactionDetail{
 			TransactionID: int64(transaction.ID),
 			Sku: cart.Sku,
 			Qty: cart.Qty,
-			SubTotal: subTotal,
+			Price: productDisplay.Price,
+			Total: Total,
 		}
 		err := config.Db.Create(&transactionDetail)
 		if err.Error != nil {
@@ -204,6 +209,15 @@ func getProductWarehouseBySku(sku string) *model.ProductWarehouse {
 		return nil
 	}
 	return &productByWarehouse
+}
+
+func getProductDisplayBySku(sku string) *model.ProductDisplay {
+	var productDisplay model.ProductDisplay
+	err := config.Db.First(&productDisplay, "sku = ?", sku)
+	if err.Error != nil {
+		return nil
+	}
+	return &productDisplay
 }
 
 func validateCart(cart model.Cart) bool {
