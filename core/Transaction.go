@@ -8,12 +8,11 @@ import "github.com/gin-gonic/gin"
 import "fmt"
 // import "io/ioutil"
 
-var TransactionDetail []model.TransactionDetail
-var Transactions []model.Transaction
-
 func GetTransactionHistory(c *gin.Context) {
+	var transactionDetail []model.TransactionDetail
+	var transactions []model.Transaction
 	userID := ClaimToken(c)
-	err := config.Db.Find(&Transactions, "user_id = ?", userID)
+	err := config.Db.Find(&transactions, "user_id = ?", userID)
 
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H {
@@ -21,9 +20,9 @@ func GetTransactionHistory(c *gin.Context) {
 			"messages" : fmt.Sprintf("%s", err.Error),
 		})
 	} else {
-		var transactions []map[string]interface{}
-		for _, transaction := range Transactions {
-			config.Db.Find(&TransactionDetail, "transaction_id = ?", transaction.ID)
+		var transactionsObj []map[string]interface{}
+		for _, transaction := range transactions {
+			config.Db.Find(&transactionDetail, "transaction_id = ?", transaction.ID)
 			var transactionList = map[string]interface{}{
 				"ID":          	 transaction.ID,
 				"CreatedAt":     transaction.CreatedAt,
@@ -33,14 +32,14 @@ func GetTransactionHistory(c *gin.Context) {
 				"SubTotal": 	 transaction.SubTotal,
 				"DiscountTotal": 	 transaction.DiscountTotal,
 				"GrandTotal": 	 transaction.GrandTotal,
-				"detail" : TransactionDetail, 
+				"detail" : transactionDetail, 
 			}
-			transactions = append(transactions, transactionList)
+			transactionsObj = append(transactionsObj, transactionList)
 		}
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Get Product",
-			"data" : transactions,
+			"data" : transactionsObj,
 		})
 	}
 }

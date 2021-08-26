@@ -8,11 +8,9 @@ import "github.com/gin-gonic/gin"
 import "fmt"
 // import "io/ioutil"
 
-var ProductDisplays []model.ProductDisplay
-var ProductDisplay model.ProductDisplay
-
 func GetProductDisplay(c *gin.Context) {
-	err := config.Db.Find(&ProductDisplays)
+	var productDisplays []model.ProductDisplay
+	err := config.Db.Find(&productDisplays)
 
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H {
@@ -23,7 +21,7 @@ func GetProductDisplay(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Get Product",
-			"data" : ProductDisplays,
+			"data" : productDisplays,
 		})
 	}
 }
@@ -94,7 +92,8 @@ func InsertProductDisplay(c *gin.Context) {
 }
 
 func GetProductDisplayBySku(c *gin.Context) {
-	err := config.Db.First(&ProductDisplay,"sku = ?", c.Param("sku"))
+	var productDisplay model.ProductDisplay
+	err := config.Db.First(&productDisplay,"sku = ?", c.Param("sku"))
 
 	if err.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H {
@@ -105,7 +104,7 @@ func GetProductDisplayBySku(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Get Product",
-			"data" : ProductDisplay,
+			"data" : productDisplay,
 		})
 	}
 }
@@ -173,21 +172,45 @@ func RestockProductDisplay(c *gin.Context) {
 		return
 	}
 	
-	productDisplay := model.ProductDisplay{
-		Sku : json.Sku,
-		Name : productWarehouse.Name,
-		Price : productWarehouse.Price,
-		Qty : json.Qty,
-	}
+	var productDisplay model.ProductDisplay
+	err = config.Db.First(&productDisplay, "sku = ?", json.Sku)
 
-	err = config.Db.Create(&productDisplay)
 	if err.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status" : "Internal Server Error",
-			"message" : fmt.Sprintf("%s", err.Error),
-		})
-		c.Abort()
-		return
+		productDisplay = model.ProductDisplay{
+			Sku : json.Sku,
+			Name : productWarehouse.Name,
+			Price : productWarehouse.Price,
+			Qty : json.Qty,
+		}
+	
+		err = config.Db.Create(&productDisplay)
+		if err.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status" : "Internal Server Error",
+				"message" : fmt.Sprintf("%s", err.Error),
+			})
+			c.Abort()
+			return
+		}
+	} else {
+		if (productWarehouse.Qty < json.Qty) {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"status" : "Unprocessable",
+				"messages" : "Total Qty di Product Display melebihi total Qty di Product Warehouse pada SKU " + json.Sku,
+			})
+			c.Abort()
+			return
+		}
+		productDisplay.Qty = json.Qty
+		err = config.Db.Save(&productDisplay)
+		if err.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status" : "Internal Server Error",
+				"message" : fmt.Sprintf("%s", err.Error),
+			})
+			c.Abort()
+			return
+		}
 	} 
 	
 	productWarehouse.Qty -= json.Qty
@@ -210,7 +233,8 @@ func RestockProductDisplay(c *gin.Context) {
 }
 
 func DeleteProductDisplay(c *gin.Context) {
-	err := config.Db.First(&ProductWarehouse,"sku = ?", c.Param("sku"))
+	var productWarehouse model.ProductWarehouse
+	err := config.Db.First(&productWarehouse,"sku = ?", c.Param("sku"))
 
 	if err.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H {
@@ -224,8 +248,8 @@ func DeleteProductDisplay(c *gin.Context) {
 	var productDisplay model.ProductDisplay
 	err = config.Db.First(&productDisplay, "sku = ?", c.Param("sku"))
 
-	ProductWarehouse.Qty += productDisplay.Qty
-	err = config.Db.Save(&ProductWarehouse)
+	productWarehouse.Qty += productDisplay.Qty
+	err = config.Db.Save(&productWarehouse)
 
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -236,7 +260,7 @@ func DeleteProductDisplay(c *gin.Context) {
 		return
 	}
 	
-	err = config.Db.Delete(&ProductWarehouse)
+	err = config.Db.Delete(&productWarehouse)
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status" : "Internal Server Error",
@@ -259,6 +283,6 @@ func DeleteProductDisplay(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H {
 		"status" : "success",
 		"messages" : "Success Delete Product",
-		"data" : ProductDisplay,
+		"data" : productWarehouse,
 	})
 }

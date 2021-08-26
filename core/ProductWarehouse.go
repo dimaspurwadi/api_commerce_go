@@ -8,10 +8,9 @@ import "github.com/gin-gonic/gin"
 import "fmt"
 // import "io/ioutil"
 
-var ProductWarehouses []model.ProductWarehouse
-var ProductWarehouse model.ProductWarehouse
 
 func GetProductWarehouse(c *gin.Context) {
+	var ProductWarehouses []model.ProductWarehouse
 	err := config.Db.Find(&ProductWarehouses)
 
 	if err.Error != nil {
@@ -61,7 +60,8 @@ func InsertProductWarehouse(c *gin.Context) {
 }
 
 func GetProductWarehouseBySku(c *gin.Context) {
-	err := config.Db.First(&ProductWarehouse,"sku = ?", c.Param("sku"))
+	var productWarehouse model.ProductWarehouse
+	err := config.Db.First(&productWarehouse,"sku = ?", c.Param("sku"))
 
 	if err.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H {
@@ -72,7 +72,7 @@ func GetProductWarehouseBySku(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Get Product",
-			"data" : ProductWarehouse,
+			"data" : productWarehouse,
 		})
 	}
 }
@@ -158,7 +158,8 @@ func RestockProductWarehouse(c *gin.Context) {
 }
 
 func DeleteProductWarehouse(c *gin.Context) {
-	err := config.Db.First(&ProductWarehouse,"sku = ?", c.Param("sku"))
+	var productWarehouse model.ProductWarehouse
+	err := config.Db.First(&productWarehouse,"sku = ?", c.Param("sku"))
 
 	if err.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H {
@@ -166,7 +167,7 @@ func DeleteProductWarehouse(c *gin.Context) {
 			"messages" : fmt.Sprintf("%s", err.Error),
 		})
 	} else {
-		err := config.Db.Delete(&ProductWarehouse)
+		err := config.Db.Delete(&productWarehouse)
 		if err.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status" : "Internal Server Error",
@@ -178,7 +179,7 @@ func DeleteProductWarehouse(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Delete Product",
-			"data" : ProductWarehouse,
+			"data" : productWarehouse,
 		})
 	}
 }

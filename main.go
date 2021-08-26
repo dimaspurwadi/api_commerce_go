@@ -60,7 +60,7 @@ func main() {
 
 	report := r.Group("/report")
 	{
-		report.GET("/", middleware.CheckJWT(0), core.GetAllReport) 
+		report.GET("/", middleware.CheckJWT(1), core.GetAllReport) 
 	}
 
 	r.Run(":" + os.Getenv("API_PORT"))

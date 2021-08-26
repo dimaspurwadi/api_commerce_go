@@ -6,12 +6,10 @@ import "net/http"
 import "github.com/gin-gonic/gin"
 import "fmt"
 
-var Carts []model.Cart
-var Cart model.Cart
-
 func GetCart(c *gin.Context) {
+	var carts []model.Cart
 	userID := ClaimToken(c)
-	err := config.Db.Find(&Carts, "user_id = ?", userID)
+	err := config.Db.Find(&carts, "user_id = ?", userID)
 
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H {
@@ -22,7 +20,7 @@ func GetCart(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H {
 			"status" : "success",
 			"messages" : "Success Get Cart",
-			"data" : Carts,
+			"data" : carts,
 		})
 	}
 }
@@ -97,8 +95,9 @@ func AddToCart(c *gin.Context) {
 }
 
 func DeleteProductFromCart(c *gin.Context) {
+	var cart model.Cart
 	userID := ClaimToken(c)
-	err := config.Db.First(&Cart,"sku = ? and user_id", c.Param("sku"), userID)
+	err := config.Db.First(&cart,"sku = ? and user_id", c.Param("sku"), userID)
 
 	if err.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H {
@@ -109,7 +108,7 @@ func DeleteProductFromCart(c *gin.Context) {
 		return
 	} 
 
-	err = config.Db.Delete(&Cart)
+	err = config.Db.Delete(&cart)
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status" : "Internal Server Error",
@@ -122,13 +121,14 @@ func DeleteProductFromCart(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H {
 		"status" : "success",
 		"messages" : "Success Delete Product From Cart",
-		"data" : Cart,
+		"data" : cart,
 	})
 }
 
 func CheckoutCart(c *gin.Context) {
+	var carts []model.Cart
 	userID := ClaimToken(c)
-	err := config.Db.Find(&Carts, "user_id = ?", userID)
+	err := config.Db.Find(&carts, "user_id = ?", userID)
 
 	if err.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H {
@@ -138,7 +138,7 @@ func CheckoutCart(c *gin.Context) {
 	}
 	/*check Qty available on display*/
 	var subTotal float64
-	for _, cart := range Carts {
+	for _, cart := range carts {
 		statusQty := validateCart(cart)
 		if !statusQty {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -171,7 +171,7 @@ func CheckoutCart(c *gin.Context) {
 		return	
 	}
 
-	for _, cart := range Carts {
+	for _, cart := range carts {
 		productDisplay := getProductDisplayBySku(cart.Sku)
 		Total := productDisplay.Price * float64(cart.Qty)
 		transactionDetail := model.TransactionDetail{
